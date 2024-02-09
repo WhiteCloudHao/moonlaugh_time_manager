@@ -3,10 +3,12 @@ package com.falcom.manager.meeting.api;
 import com.falcom.manager.meeting.api.dto.AuthenticationRequest;
 import com.falcom.manager.meeting.api.dto.AuthenticationResponse;
 import com.falcom.manager.meeting.api.dto.RegisterRequest;
+import com.falcom.manager.meeting.api.dto.request.VerifyCodeRequest;
 import com.falcom.manager.meeting.persistence.user.Role;
 import com.falcom.manager.meeting.persistence.user.User;
 import com.falcom.manager.meeting.service.AuthenticationService;
 import com.falcom.manager.meeting.untils.ConstantMessages;
+import com.falcom.manager.meeting.untils.ValidateEmail;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,6 +32,7 @@ import org.json.simple.JSONObject;
 import org.springframework.web.multipart.MultipartFile;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -151,6 +154,12 @@ public class AuthenticationController {
             response.put(ConstantMessages.MESSAGE, ConstantMessages.MESSAGE_INVALID_INPUT);
             response.put(ConstantMessages.ERRORS, errors);
             return new ResponseEntity<>(new JSONObject(response), HttpStatus.BAD_REQUEST);
+        }
+        String status = service.checkStatusAccount(email);
+        if(status != "userValid") {
+            response.put(ConstantMessages.MESSAGE, ConstantMessages.MESSAGE_INVALID_INPUT);
+            errors.put("cannotLogin", status);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
         User user;
         try {
@@ -276,6 +285,27 @@ public class AuthenticationController {
             HttpServletResponse response
     ) throws IOException {
         service.refreshToken(request, response);
+    }
+
+    @PostMapping("/verify-code")
+    public ResponseEntity<Object> verifyCode(@RequestBody VerifyCodeRequest verifyCodeRequest) {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> errors = new HashMap<>();
+        if(!ValidateEmail.isValidEmail(verifyCodeRequest.getEmail())) {
+            errors.put("emailInvalid", "emailInvalid");
+        }
+        if(verifyCodeRequest.getVerifyCode().length() != 6) {
+            errors.put("verifyCodeInValid", "lengthOfCodeMustIs6");
+            response.put(ConstantMessages.MESSAGE, "verifyCodeFailed");
+            response.put(ConstantMessages.ERRORS, errors);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+        try {
+            service.verifyCode(verifyCodeRequest);
+        } catch ( ResponseStatusException err) {
+            return new ResponseEntity<>(err, HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
     private Map<String, String> buildReturnedUser(User user) {
         Map<String, String> returnedUser = new HashMap<>();

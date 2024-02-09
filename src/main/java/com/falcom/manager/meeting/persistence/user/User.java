@@ -44,8 +44,12 @@ public class User implements UserDetails {
     private Role role;
     @JsonIgnore
     private Integer active;
-    private Timestamp createAt;
-    private Timestamp updateAt;
+    private Long createAt;
+    private Long updateAt;
+    private String verifyCode;
+//    Status: 0: deleted, 1: Registered but not yet verify code, 2: ok
+    private String status;
+    private Long codeExpired;
     @OneToMany(mappedBy = "user")
     private List<Token> tokens;
     public Integer getId() {

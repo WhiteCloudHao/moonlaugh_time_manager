@@ -2,6 +2,7 @@ package com.falcom.manager.meeting.service;
 import com.falcom.manager.meeting.api.dto.AuthenticationRequest;
 import com.falcom.manager.meeting.api.dto.AuthenticationResponse;
 import com.falcom.manager.meeting.api.dto.RegisterRequest;
+import com.falcom.manager.meeting.api.dto.request.VerifyCodeRequest;
 import com.falcom.manager.meeting.service.JwtService;
 import com.falcom.manager.meeting.persistence.token.Token;
 import com.falcom.manager.meeting.persistence.token.TokenRepository;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -44,4 +46,7 @@ public interface AuthenticationService {
     Optional<User> findByEmail(String email);
     Integer getUserId();
     User getUser();
+    String generateVerifyCode(int length);
+    String checkStatusAccount(String email);
+    void verifyCode(VerifyCodeRequest verifyCodeRequest);
 }

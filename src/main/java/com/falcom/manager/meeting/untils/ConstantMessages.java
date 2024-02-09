@@ -24,6 +24,8 @@ public class ConstantMessages {
     public static final String ERROR_USER_EMAIL_EXISTED = "EmailExisted";
     public static final String ERROR_USER_FULLNAME_MUST_NOT_NULL = "NameMustNotNull";
     public static final String ERROR_USER_ROLE_NOT_EXIST = "RoleIsNotExist";
+    public static final String ERROR_USER_DISABLED = "UserDisabled";
+    public static final String ERROR_USER_NOT_YET_VERIFY = "UserDisabled";
 //    public static final String ERROR_SYSTEM_VERIFY_TOKEN_GOOGLE = "something went wrong";
 //    public static final String ERROR_INTERNAL_SYSTEM = "something went wrong";
 

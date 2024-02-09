@@ -2,6 +2,7 @@ package com.falcom.manager.meeting.service;
 
 import com.falcom.manager.meeting.api.dto.AuthenticationResponse;
 import com.falcom.manager.meeting.api.dto.RegisterRequest;
+import com.falcom.manager.meeting.api.dto.request.VerifyCodeRequest;
 import com.falcom.manager.meeting.persistence.token.Token;
 import com.falcom.manager.meeting.persistence.token.TokenRepository;
 import com.falcom.manager.meeting.persistence.token.TokenType;
@@ -18,6 +19,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,15 +27,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
 import javax.ws.rs.InternalServerErrorException;
 
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -59,13 +60,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 //            }
 //        }
         try {
+            String verifyCode = generateVerifyCode(6);
             RegisterRequest a = request;
+            long now = System.currentTimeMillis();
             User user = User.builder()
                     .fullName(request.getFullName())
                     .email(request.getEmail())
                     .password(passwordEncoder.encode(request.getPassword()))
 //                    .birthDay(userBrithDay)
                     .role(roleUser)
+                    .status("1")
+                    .verifyCode(verifyCode)
+                    .codeExpired(now + 5*60*1000)
+                    .createAt(now)
+                    .updateAt(now)
                     .build();
             savedUser = userRepository.save(user);
         } catch (DataIntegrityViolationException ex){
@@ -112,6 +120,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Authentication authentication;
         try {
             // authenticate user using authenticationManager
+
             authentication = authenticationManager
                     .authenticate(new UsernamePasswordAuthenticationToken(email , password));
 
@@ -236,5 +245,57 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
         return user;
+    }
+
+    @Override
+    public String generateVerifyCode(int length) {
+// Dãy ký tự số từ '0' đến '9'
+        String digits = "0123456789";
+
+        // Sử dụng StringBuilder để xây dựng chuỗi kết quả
+        StringBuilder stringBuilder = new StringBuilder(length);
+
+        // Tạo đối tượng Random
+        Random random = new Random();
+
+        // Tạo chuỗi ngẫu nhiên bằng cách chọn ngẫu nhiên các ký tự từ dãy số
+        for (int i = 0; i < length; i++) {
+            int randomIndex = random.nextInt(digits.length());
+            char randomDigit = digits.charAt(randomIndex);
+            stringBuilder.append(randomDigit);
+        }
+
+        return stringBuilder.toString();
+    }
+
+    public String checkStatusAccount(String email) {
+        Optional<User> user = findByEmail(email);
+        if(user.isPresent()) {
+            String status = user.get().getStatus();
+            if(status == "0") {
+                return "userDisabled";
+            } else if(status == "1") {
+                return "userNotYetVerify";
+            } else if(status == "2") {
+                return "userValid";
+            }
+        }
+        return "userNotFound";
+    }
+
+    @Override
+    public void verifyCode(VerifyCodeRequest verifyCodeRequest) {
+        if(!checkEmailExist(verifyCodeRequest.getEmail())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "emailNotYetRegisted");
+        Optional<User> user = findByEmail(verifyCodeRequest.getEmail());
+        User userPresent;
+        if(user.isPresent()) {
+            userPresent = user.get();
+            if(userPresent.getVerifyCode() != verifyCodeRequest.getVerifyCode()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "verifyCodeWrong");
+            }
+            userPresent.setStatus("2");
+            userRepository.save(userPresent);
+        }
+
     }
 }
