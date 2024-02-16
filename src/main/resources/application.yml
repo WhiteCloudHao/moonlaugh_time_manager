@@ -25,18 +25,27 @@ application:
       expiration: 5184000000 # 60 day
       refresh-token:
         expiration: 36288000000 # 7*60 days
-logging:
-  level:
-    org:
-      hibernate:
-#        SQL: DEBUG
-        type:
-          descriptor:
-            sql:
-#              BasicBinder: TRACE
-      springframework:
-        jdbc:
-          core:
+#logging:
+#  level:
+#    org:
+#      hibernate:
+##        SQL: DEBUG
+#        type:
+#          descriptor:
+#            sql:
+##              BasicBinder: TRACE
+#      springframework:
+#        jdbc:
+#          core:
 #            JdbcTemplate: DEBUG
 #            StatementCreatorUtils: TRACE
+#  mail:
+#    host: smtp.gmail.com
+#    port: 587
+#    username: phanthinhpdt@gmail.com
+#    password: 190620022002
+#    smtp:
+#      auth: true
+#      starttls:
+#        enable: true
 
